@@ -1,0 +1,52 @@
+library(shiny)
+library(ggplot2)
+library(readr)
+
+
+# Read CSV 
+Data <- read.csv("/Users/ivanchavez/Library/CloudStorage/OneDrive-SouthernMethodistUniversity/DS 6371 - Stats/train.csv")
+
+sorted_neighborhoods <- c("NAmes", "Edwards", "BrkSide")
+
+ui <- fluidPage(
+  titlePanel("Real Estate Analysis"),
+  sidebarLayout(
+    sidebarPanel(
+      # Remove fileInput and actionButton
+      radioButtons("plot_type", "Select Plot Type", choices = c("Scatterplot")),
+      br(),
+      selectInput("neighborhood_filter", "Filter by Neighborhood", choices = c("All",sorted_neighborhoods)),
+      br(),
+      checkboxInput("add_regression", "Add Linear Regression Line"),
+    ),
+    mainPanel(
+      plotOutput("data_plot")
+    )
+  )
+)
+
+server <- function(input, output) {
+  output$data_plot <- renderPlot({
+    plot_data <- Data
+    
+    # Filter data based on the selected neighborhood
+    if (input$neighborhood_filter != "All") {
+      plot_data <- plot_data[plot_data$Neighborhood == input$neighborhood_filter, ]
+    }
+    
+    p <- ggplot()  # Initialize ggplot object
+    
+     if (input$plot_type == "Scatterplot") {
+      p <- p + geom_point(data = plot_data, aes(x = GrLivArea, y = SalePrice), color = "blue") +
+        labs(title = "Scatterplot of Sqft. Living area vs. Sale Price", x = "Sq foot iving area", y = "Sale Price")
+    }
+    
+    if (input$add_regression) {
+      p <- p + geom_smooth(data = plot_data,aes(x = GrLivArea, y = SalePrice), method = "lm", color = "red")
+    }
+    
+    print(p)  # Print the ggplot object
+  })
+}
+
+shinyApp(ui = ui, server = server)
